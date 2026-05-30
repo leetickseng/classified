@@ -9,25 +9,40 @@ export async function POST(req: Request) {
 
   try {
     const data = await req.json();
+
+    // Ensure userId is correctly cast and present
+    const userId = (session.user as any).id;
+    if (!userId) {
+       // Fallback to find by email
+       const user = await prisma.user.findUnique({ where: { email: session.user.email! } });
+       if (!user) throw new Error("User not found in database");
+       (session.user as any).id = user.id;
+    }
+
     const post = await prisma.post.create({
       data: {
         title: data.title,
         description: data.description,
-        address: data.address,
+        address: data.address || null,
         contact: data.contact,
-        workingHours: data.workingHours,
-        priceRange: data.priceRange,
+        workingHours: data.workingHours || null,
+        priceRange: data.priceRange || null,
         status: "PENDING",
         userId: (session.user as any).id,
         categoryId: data.categoryId,
         locationId: data.locationId || null,
-        images: { create: data.images.map((url: string) => ({ url })) },
-        tags: { connect: data.tags?.map((id: string) => ({ id })) || [] },
+        images: {
+          create: (data.images || []).map((url: string) => ({ url }))
+        },
+        tags: {
+          connect: (data.tags || []).map((id: string) => ({ id }))
+        },
       },
     });
     return NextResponse.json(post, { status: 201 });
-  } catch (error) {
-    return NextResponse.json({ error: "Failed to create post" }, { status: 500 });
+  } catch (error: any) {
+    console.error("Publish Error:", error);
+    return NextResponse.json({ error: "Failed to create post", details: error.message }, { status: 500 });
   }
 }
 

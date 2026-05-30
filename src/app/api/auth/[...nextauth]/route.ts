@@ -17,7 +17,9 @@ export const authOptions: NextAuthOptions = {
         type: { label: "Type", type: "hidden" },
       },
       async authorize(credentials) {
+        console.log("Authorize attempt:", credentials?.email, "Type:", credentials?.type);
         if (!credentials?.email || !credentials?.password) {
+          console.error("Missing email or password");
           throw new Error("Invalid credentials");
         }
 
@@ -28,14 +30,23 @@ export const authOptions: NextAuthOptions = {
             where: { email: credentials.email },
           });
 
-          if (!user || !(await bcrypt.compare(credentials.password, user.password))) {
+          if (!user) {
+            console.error("User not found:", credentials.email);
+            throw new Error("Invalid email or password");
+          }
+
+          const isValid = await bcrypt.compare(credentials.password, user.password);
+          if (!isValid) {
+            console.error("Invalid password for user:", credentials.email);
             throw new Error("Invalid email or password");
           }
 
           if (user.status === "disabled") {
+            console.error("User account disabled:", credentials.email);
             throw new Error("Your account has been disabled");
           }
 
+          console.log("User authorized successfully:", user.email);
           return {
             id: user.id,
             email: user.email,
@@ -48,9 +59,11 @@ export const authOptions: NextAuthOptions = {
           });
 
           if (!admin || !(await bcrypt.compare(credentials.password, admin.password))) {
+            console.error("Invalid admin credentials:", credentials.email);
             throw new Error("Invalid email or password");
           }
 
+          console.log("Admin authorized successfully:", admin.email);
           return {
             id: admin.id,
             email: admin.email,

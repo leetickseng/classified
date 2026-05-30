@@ -17,9 +17,10 @@ export default function LoginForm() {
     setLoading(true);
     setError("");
 
-    const result = await signIn("user-credentials", {
+    const result = await signIn("credentials", {
       email,
       password,
+      type: "user",
       redirect: false,
     });
 
@@ -45,6 +46,7 @@ export default function LoginForm() {
             onChange={(e) => setEmail(e.target.value)}
             className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
             required
+            id="email"
           />
         </div>
         <div className="mb-6">
@@ -55,6 +57,7 @@ export default function LoginForm() {
             onChange={(e) => setPassword(e.target.value)}
             className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
             required
+            id="password"
           />
         </div>
         <button
