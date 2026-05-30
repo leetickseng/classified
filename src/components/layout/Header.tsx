@@ -3,11 +3,15 @@
 import Link from "next/link";
 import { Search } from "lucide-react";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 export default function Header() {
   const [query, setQuery] = useState("");
   const router = useRouter();
+  const pathname = usePathname();
+
+  // Hide header in admin pages
+  if (pathname.startsWith("/admin")) return null;
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

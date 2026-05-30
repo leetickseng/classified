@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Check, X, Star, Trash2 } from "lucide-react";
+import { Check, X, Star, Trash2, Pin } from "lucide-react";
 
 interface AdminPostTableProps {
   initialPosts: any[];
@@ -19,6 +19,7 @@ export default function AdminPostTable({ initialPosts }: AdminPostTableProps) {
     if (action === "reject") body.status = "REJECTED";
     if (action === "delete") method = "DELETE";
     if (action === "toggleRecommended") body.isRecommended = !data.isRecommended;
+    if (action === "togglePinned") body.isPinned = !data.isPinned;
 
     try {
       const res = await fetch(`/api/admin/posts/${id}`, {
@@ -82,7 +83,7 @@ export default function AdminPostTable({ initialPosts }: AdminPostTableProps) {
                 </div>
               </td>
               <td className="px-6 py-4">
-                <div className="flex items-center space-x-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <button
                     onClick={() => handleAction(post.id, "approve")}
                     title="Approve"
@@ -96,6 +97,13 @@ export default function AdminPostTable({ initialPosts }: AdminPostTableProps) {
                     className="p-1.5 bg-red-50 text-red-600 rounded hover:bg-red-100"
                   >
                     <X className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleAction(post.id, "togglePinned", { isPinned: post.isPinned })}
+                    title="Pin Post"
+                    className={`p-1.5 rounded ${post.isPinned ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-600'}`}
+                  >
+                    <Pin className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => handleAction(post.id, "toggleRecommended", { isRecommended: post.isRecommended })}

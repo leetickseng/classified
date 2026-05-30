@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { LayoutDashboard, FileText, FolderTree, Tags, Image as ImageIcon, Megaphone, Users, LogOut } from "lucide-react";
+import { LayoutDashboard, FileText, FolderTree, Tags, Image as ImageIcon, Megaphone, Users, LogOut, MapPin } from "lucide-react";
 
 export default function AdminSidebar() {
   const menuItems = [
     { name: "Dashboard", icon: LayoutDashboard, href: "/admin/dashboard" },
     { name: "Posts", icon: FileText, href: "/admin/posts" },
     { name: "Categories", icon: FolderTree, href: "/admin/categories" },
+    { name: "Locations", icon: MapPin, href: "/admin/locations" },
     { name: "Tags", icon: Tags, href: "/admin/tags" },
     { name: "Banners", icon: ImageIcon, href: "/admin/banners" },
     { name: "Announcements", icon: Megaphone, href: "/admin/announcements" },

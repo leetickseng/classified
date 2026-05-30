@@ -1,99 +1,78 @@
 import NextAuth, { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma) as any,
+  session: {
+    strategy: "jwt",
+  },
   providers: [
     CredentialsProvider({
-      id: "user-credentials",
-      name: "User Credentials",
+      id: "credentials",
+      name: "Credentials",
       credentials: {
-        email: { label: "Email", type: "email" },
+        email: { label: "Email", type: "text" },
         password: { label: "Password", type: "password" },
+        type: { label: "Type", type: "hidden" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          return null;
+          throw new Error("Invalid credentials");
         }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
-        });
+        const isUser = credentials.type === "user";
 
-        if (!user || user.status !== "active") {
-          return null;
+        if (isUser) {
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email },
+          });
+
+          if (!user || !(await bcrypt.compare(credentials.password, user.password))) {
+            throw new Error("Invalid email or password");
+          }
+
+          if (user.status === "disabled") {
+            throw new Error("Your account has been disabled");
+          }
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: "user",
+          };
+        } else {
+          const admin = await prisma.admin.findUnique({
+            where: { email: credentials.email },
+          });
+
+          if (!admin || !(await bcrypt.compare(credentials.password, admin.password))) {
+            throw new Error("Invalid email or password");
+          }
+
+          return {
+            id: admin.id,
+            email: admin.email,
+            name: admin.name,
+            role: "admin",
+          };
         }
-
-        const isPasswordValid = await bcrypt.compare(
-          credentials.password,
-          user.password
-        );
-
-        if (!isPasswordValid) {
-          return null;
-        }
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: "user",
-        };
-      },
-    }),
-    CredentialsProvider({
-      id: "admin-credentials",
-      name: "Admin Credentials",
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
-      },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          return null;
-        }
-
-        const admin = await prisma.admin.findUnique({
-          where: { email: credentials.email },
-        });
-
-        if (!admin) {
-          return null;
-        }
-
-        const isPasswordValid = await bcrypt.compare(
-          credentials.password,
-          admin.password
-        );
-
-        if (!isPasswordValid) {
-          return null;
-        }
-
-        return {
-          id: admin.id,
-          email: admin.email,
-          name: admin.name,
-          role: "admin",
-        };
       },
     }),
   ],
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.role = (user as any).role;
         token.id = user.id;
+        token.role = (user as any).role;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        (session.user as any).role = token.role;
         (session.user as any).id = token.id;
+        (session.user as any).role = token.role;
       }
       return session;
     },
@@ -101,10 +80,6 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/login",
   },
-  session: {
-    strategy: "jwt",
-  },
-  secret: process.env.NEXTAUTH_SECRET,
 };
 
 const handler = NextAuth(authOptions);

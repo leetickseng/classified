@@ -6,13 +6,12 @@ import { useSession } from "next-auth/react";
 import { Upload, X, Loader2 } from "lucide-react";
 
 export default function PublishPage() {
-  const sessionData = useSession();
-  const status = sessionData?.status || "loading";
+  const { data: session, status } = useSession();
   const router = useRouter();
 
   const [categories, setCategories] = useState<any[]>([]);
   const [locations, setLocations] = useState<any[]>([]);
-  const [tags, setTags] = useState<any[]>([]);
+  const [availableTags, setAvailableTags] = useState<any[]>([]);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -44,7 +43,7 @@ export default function PublishPage() {
       ]);
       if (catRes.ok) setCategories(await catRes.json());
       if (locRes.ok) setLocations(await locRes.json());
-      if (tagRes.ok) setTags(await tagRes.json());
+      if (tagRes.ok) setAvailableTags(await tagRes.json());
     };
     fetchOptions();
   }, [status, router]);
@@ -83,6 +82,15 @@ export default function PublishPage() {
     setImages(prev => prev.filter((_, i) => i !== index));
   };
 
+  const toggleTag = (tagId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      selectedTags: prev.selectedTags.includes(tagId)
+        ? prev.selectedTags.filter(id => id !== tagId)
+        : [...prev.selectedTags, tagId]
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.categoryId) {
@@ -114,13 +122,13 @@ export default function PublishPage() {
     }
   };
 
-  if (status === "loading") return <div className="p-8 text-center">Loading...</div>;
+  if (status === "loading") return <div className="p-8 text-center text-gray-500">Loading...</div>;
 
   return (
     <div className="max-w-2xl mx-auto p-4 md:py-8">
       <h1 className="text-2xl font-bold mb-6 text-gray-800">Publish New Information</h1>
 
-      <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-xl shadow-sm">
+      <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
         {/* Images */}
         <div>
           <label className="block text-sm font-bold text-gray-700 mb-2">Images (Max 5)</label>
@@ -138,7 +146,7 @@ export default function PublishPage() {
               </div>
             ))}
             {images.length < 5 && (
-              <label className="aspect-square flex flex-col items-center justify-center border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50">
+              <label className="aspect-square flex flex-col items-center justify-center border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50 transition">
                 <Upload className="w-6 h-6 text-gray-400" />
                 <span className="text-[10px] text-gray-400 mt-1">Upload</span>
                 <input type="file" className="hidden" accept="image/*" multiple onChange={handleImageUpload} disabled={uploading} />
@@ -160,7 +168,7 @@ export default function PublishPage() {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">Category</label>
             <select
@@ -187,6 +195,17 @@ export default function PublishPage() {
         </div>
 
         <div>
+          <label className="block text-sm font-bold text-gray-700 mb-1">Address</label>
+          <input
+            type="text"
+            className="w-full border rounded-lg p-2 outline-none"
+            value={formData.address}
+            onChange={e => setFormData({ ...formData, address: e.target.value })}
+            placeholder="Detailed address"
+          />
+        </div>
+
+        <div>
           <label className="block text-sm font-bold text-gray-700 mb-1">Description</label>
           <textarea
             required
@@ -194,10 +213,11 @@ export default function PublishPage() {
             className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-green-500 outline-none"
             value={formData.description}
             onChange={e => setFormData({ ...formData, description: e.target.value })}
+            placeholder="Details about your offering..."
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">Contact</label>
             <input
@@ -206,7 +226,7 @@ export default function PublishPage() {
               className="w-full border rounded-lg p-2 outline-none"
               value={formData.contact}
               onChange={e => setFormData({ ...formData, contact: e.target.value })}
-              placeholder="Phone number"
+              placeholder="Phone number / Email"
             />
           </div>
           <div>
@@ -218,6 +238,37 @@ export default function PublishPage() {
               onChange={e => setFormData({ ...formData, priceRange: e.target.value })}
               placeholder="e.g. RM10 - RM50"
             />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-bold text-gray-700 mb-1">Working Hours</label>
+          <input
+            type="text"
+            className="w-full border rounded-lg p-2 outline-none"
+            value={formData.workingHours}
+            onChange={e => setFormData({ ...formData, workingHours: e.target.value })}
+            placeholder="e.g. 9:00 AM - 6:00 PM"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-bold text-gray-700 mb-2">Tags</label>
+          <div className="flex flex-wrap gap-2">
+            {availableTags.map(tag => (
+              <button
+                key={tag.id}
+                type="button"
+                onClick={() => toggleTag(tag.id)}
+                className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                  formData.selectedTags.includes(tag.id)
+                    ? "bg-green-600 text-white"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                {tag.name}
+              </button>
+            ))}
           </div>
         </div>
 

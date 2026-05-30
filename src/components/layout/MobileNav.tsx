@@ -8,6 +8,9 @@ import { cn } from "@/lib/utils";
 export default function MobileNav() {
   const pathname = usePathname();
 
+  // Hide in admin pages
+  if (pathname.startsWith("/admin")) return null;
+
   const navItems = [
     { label: "Home", href: "/", icon: Home },
     { label: "Publish", href: "/publish", icon: PlusSquare },
