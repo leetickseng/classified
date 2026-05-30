@@ -1,0 +1,108 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  status    String   @default("active") // active, disabled
+  posts     Post[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Admin {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  icon      String?
+  posts     Post[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Tag {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  posts     Post[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Location {
+  id        String   @id @default(cuid())
+  country   String   @default("Malaysia")
+  state     String
+  city      String
+  posts     Post[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Post {
+  id            String      @id @default(cuid())
+  title         String
+  description   String
+  priceRange    String?
+  workingHours  String?
+  address       String?
+  contact       String
+  status        String      @default("PENDING") // PENDING, APPROVED, REJECTED
+  isPinned      Boolean     @default(false)
+  isRecommended Boolean     @default(false)
+
+  userId        String
+  user          User        @relation(fields: [userId], references: [id])
+
+  categoryId    String
+  category      Category    @relation(fields: [categoryId], references: [id])
+
+  locationId    String?
+  location      Location?   @relation(fields: [locationId], references: [id])
+
+  images        PostImage[]
+  tags          Tag[]
+
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model PostImage {
+  id     String @id @default(cuid())
+  url    String
+  postId String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+}
+
+model Banner {
+  id        String   @id @default(cuid())
+  title     String?
+  imageUrl  String
+  link      String?
+  position  String   @default("HOME_TOP") // HOME_TOP, CATEGORY_TOP
+  createdAt DateTime @default(now())
+}
+
+model Announcement {
+  id        String   @id @default(cuid())
+  content   String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
